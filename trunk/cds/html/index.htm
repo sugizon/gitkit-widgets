@@ -9,13 +9,40 @@
   <title>Central Account Chooser</title>
   <script type=text/javascript src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
   <script type=text/javascript src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"></script>
-  <script type=text/javascript src="https://gitkit-cds.appspot.com/javascript/cds-manage__en.js"></script>
-  <link type=text/css rel=stylesheet href="https://gitkit-cds.appspot.com/stylesheet/cds.css" />
+  <!--script type=text/javascript src="https://gitkit-cds.appspot.com/javascript/cds-manage-loader.js"></script-->
+  <!--link type=text/css rel=stylesheet href="https://gitkit-cds.appspot.com/stylesheet/cds.css" /-->
+  <!--script type=text/javascript>
+    function loadCdsManageWidget() {
+      var lang = window.cds.util.parseUrlParams(window.location.href)['lang'] || 'en';
+      lang = lang.replace(/-/g, '_').toLowerCase();
+      var widgetJS = 'https://gitkit-cds.appspot.com/javascript/cds-manage__' + lang + '.js';
+      var defaultWidgetJS = 'https://gitkit-cds.appspot.com/javascript/cds-manage__en.js';
+      new window.cds.loader.JsLoader().load(widgetJS, defaultWidgetJS, function() {
+          jQuery('#cds').cds();
+      });
+    }
+  </script-->
+  <script type="text/javascript" src="https://ajax.googleapis.com/jsapi"></script>
   <script type=text/javascript>
+    function parseUrlParams(url) {
+      var params = [];
+      var segments = url.slice(url.indexOf('?') + 1).split('&');
+      for (var i = 0; i < segments.length; i++) {
+        var pair = segments[i].split('=');
+        if (pair.length == 2) {
+          params[pair[0]] = decodeURIComponent(pair[1]);
+        } else {
+          params[pair[0]] = undefined;
+        }
+      }
+      return params;
+    }
+    var lang = parseUrlParams(window.location.href)['lang'] || 'en';
+    google.load('identitytoolkit', '0.1', {packages: ['cds_manage'], language: lang});
     jQuery(function(){
       jQuery('#cds').cds();
     });
-   </script>
+  </script>
 </head>
 <body>
 <style>plaintext{display:none}</style>

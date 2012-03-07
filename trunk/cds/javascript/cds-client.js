@@ -44,13 +44,23 @@ window.google.identitytoolkit.easyrp =
     window.google.identitytoolkit.easyrp || {};
 
 /**
+ * @fileoverview Description of this file.
+ * @author mengcheng@google.com (Mengcheng Duan)
+ */
+
+/**
+ * Namespace alias for CDS.
+ */
+window.cds = window.google.identitytoolkit.easyrp;
+
+/**
  * @fileoverview Defines some common utility functions.
  * @supported Chrome5+, FireFox3.6+, IE8, IE7, and Safari4.0+.
  * @author guibinkong@google.com (Guibin Kong)
  */
 
 /**
- * @namespace Utility functions.
+ * Namespace for utility functions.
  */
 window.google.identitytoolkit.easyrp.util =
     window.google.identitytoolkit.easyrp.util || {};
@@ -147,12 +157,11 @@ window.google.identitytoolkit.easyrp.util.postTo = function(targetUrl,
 
 /**
  * Returns the URL params. e.g. To get the value of the "foo" param in the
- * URL the code can be: var foo = parseUrlParams_()['foo'];
+ * URL the code can be: var foo = parseUrlParams()['foo'];
  * @param {string} url The URL to parse.
  * @return {Object} The URL params array.
- * @private
  */
-window.google.identitytoolkit.easyrp.util.parseUrlParams_ = function(url) {
+window.google.identitytoolkit.easyrp.util.parseUrlParams = function(url) {
   var params = [];
   var segments = url.slice(url.indexOf('?') + 1).split('&');
   for (var i = 0; i < segments.length; i++) {
@@ -176,7 +185,7 @@ window.google.identitytoolkit.easyrp.util.formRedirect = function(targetUrl,
     parent) {
   var url = targetUrl.substring(0, targetUrl.indexOf('?'));
   var params =
-      window.google.identitytoolkit.easyrp.util.parseUrlParams_(targetUrl);
+      window.google.identitytoolkit.easyrp.util.parseUrlParams(targetUrl);
   window.google.identitytoolkit.easyrp.util.postTo(url, params, parent);
 };
 
@@ -445,12 +454,12 @@ window.google.identitytoolkit.easyrp.rpc =
 window.google.identitytoolkit.easyrp.rpc.RpcObject = function() {};
 
 /**
- * Transfers the RPC object to a normal object.
+ * Transfers the RPC object to a normal object and sets the storage timestamp.
  * @return {string} The normal object represents the RPC object.
  */
 window.google.identitytoolkit.easyrp.rpc.RpcObject.prototype.toJSON =
     function() {
-  var json = {jsonrpc: '2.0'};
+  var json = {jsonrpc: '2.0', timestamp: new Date().getTime()};
   return json;
 };
 
@@ -698,16 +707,14 @@ window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN =
     'https://www.accountchooser.biz';
 
 /** default CDS iframe URL  */
-window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_URL =
-    window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN + '/iframe.htm';
+window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_PATH =
+    '/iframe.htm';
 
 /** default CDS popup URL  */
-window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_POPUP_URL =
-    window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN + '/popup.htm';
+window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_POPUP_PATH = '/popup.htm';
 
 /** default CDS redirect URL  */
-window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_REDIRECT_URL =
-    window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN +
+window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_REDIRECT_PATH =
     '/redirect.htm';
 
 /** default popup width  */
@@ -721,6 +728,9 @@ window.google.identitytoolkit.easyrp.rpc.EMPTY_RESPONSE_CALLBACK = 'empty';
 
 /** Timeout for IDP assertion, in milliseconds. Default to 3 seconds  */
 window.google.identitytoolkit.easyrp.rpc.IDP_TIMEOUT = 3000;
+
+/** The life time of an RPC object, in milliseconds. Default to 5 minutes. */
+window.google.identitytoolkit.easyrp.rpc.RPC_TIMEOUT = 5 * 60 * 1000;
 
 
 /**
@@ -1026,6 +1036,7 @@ window.google.identitytoolkit.easyrp.rpc.client_ = {
   popupMode: false,
   popupWindow: null,
   domain: window.location.host,
+  cdsDomain: null,
   iframe: null,
   iframeLoaded: false,
   cdsReady: false,
@@ -1082,6 +1093,11 @@ window.google.identitytoolkit.easyrp.rpc.getCurrentDomain_ = function() {
 window.google.identitytoolkit.easyrp.rpc.process_ = function(e) {
   window.google.identitytoolkit.easyrp.util.log('Received message: ' + e.data +
       ' from ' + e.origin);
+  if (e.origin !== window.google.identitytoolkit.easyrp.rpc.client_.cdsDomain) {
+    window.google.identitytoolkit.easyrp.util.log(
+        'Ingore message from unrecognized domain: ' + e.origin);
+    return;
+  }
   var rpcObject =
       window.google.identitytoolkit.easyrp.rpc.parseRpcObject(e.data);
   if (!rpcObject) {
@@ -1170,7 +1186,8 @@ window.google.identitytoolkit.easyrp.rpc.onCdsReady_ = function() {
  * {
  *   popupMode: true/false,  //default is false, that is, redirect mode.
  *   popupWindow: popup,     // popup window object. Used in popup mode.
- *   iframeUrl:  ''          // Used in redirect mode.
+ *   iframeUrl:  '',         // Used in redirect mode.
+ *   cdsDomain:  ''          // The domain of CDS.
  * }
  * </pre>
  * @param {Object} options configuration parameters of the CDS client.
@@ -1186,10 +1203,10 @@ window.google.identitytoolkit.easyrp.rpc.initClient = function(options) {
   window.google.identitytoolkit.easyrp.rpc.init_(
       window.google.identitytoolkit.easyrp.rpc.process_);
   if (!window.google.identitytoolkit.easyrp.rpc.client_.popupMode) {
-    var iframeUrl = options.iframeUrl ||
-        window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_URL;
-    window.google.identitytoolkit.easyrp.rpc.initIFrame_(iframeUrl);
+    window.google.identitytoolkit.easyrp.rpc.initIFrame_(options.iframeUrl);
   }
+  window.google.identitytoolkit.easyrp.rpc.client_.cdsDomain =
+      options.cdsDomain;
 };
 
 /**
@@ -1423,11 +1440,37 @@ window.google.identitytoolkit.easyrp.rpc.fireResponseEvent = function(
  */
 window.google.identitytoolkit.easyrp.CdsClient = function(config) {
   window.google.identitytoolkit.easyrp.param.notEmpty(config, 'config');
+  // Merge customized client configuration with the default.
+  config = jQuery.extend(true, {},
+      window.google.identitytoolkit.easyrp.CdsClient.DEFAULT_CDS_CLIENT_CONFIG_,
+      config);
+  // Build the absolute URLs for CDS server.
+  var cdsServer = config.cdsServer;
+  cdsServer.iframe = cdsServer.domain + cdsServer.iframe;
+  cdsServer.popup = cdsServer.domain + cdsServer.popup;
+  cdsServer.redirect = cdsServer.domain + cdsServer.redirect;
   this.config_ = config;
   this.cdsOptions_ = {
-    clientCallbackUrl: this.config_.clientCallbackUrl || window.location.href,
-    keepPopup: !!this.config_.keepPopup
+    clientCallbackUrl: this.config_.clientCallbackUrl,
+    keepPopup: !!this.config_.keepPopup,
+    showAll: !!this.config_.showAll
   };
+};
+
+/**
+ * Default CDS configuration
+ * @private
+ */
+window.google.identitytoolkit.easyrp.CdsClient.DEFAULT_CDS_CLIENT_CONFIG_ = {
+  cdsServer: {
+    domain: window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN,
+    iframe: window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_PATH,
+    popup: window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_POPUP_PATH,
+    redirect: window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_REDIRECT_PATH
+  },
+  popupWidth: window.google.identitytoolkit.easyrp.rpc.DEFAULT_POPUP_WIDTH,
+  popupHeight: window.google.identitytoolkit.easyrp.rpc.DEFAULT_POPUP_HEIGHT,
+  clientCallbackUrl: window.location.href
 };
 
 /**
@@ -1437,9 +1480,12 @@ window.google.identitytoolkit.easyrp.CdsClient = function(config) {
  * {
  *   popupMode: true/false,  // Default is false, that is, redirect mode.
  *   popupWindow: popup,     // Popup window object. Used in popup mode.
- *   iframeUrl:  '',         // Used in redirect mode.
- *   cdsRedirectUrl: '',     // CDS Url used in redirect mode.
- *   cdsPopupUrl: '',        // CDS Url used in popup mode.
+ *   cdsServer: {            // Optional CDS server config.
+ *     domain: '',           // CDS domain.
+ *     iframe: '',           // Path for iframe page. e.g., '/iframe.htm'
+ *     popup: '',            // Path for popup page. e.g., '/popup.htm'
+ *     redirect: ''          // Path for redirect page. e.g., '/redirect.htm'
+ *   },
  *   popupWidth: '',         // Width of the popup window. Used in popup mode.
  *   popupHeight: '',        // Height of the popup window. Used in popup mode.
  *   clientCallbackUrl: '',  // Address returned from CDS. Used in redirect
@@ -1477,12 +1523,11 @@ window.google.identitytoolkit.easyrp.CdsClient.prototype.init = function() {
   }
   this.registerListeners_(this.config_.oneTimeCallbacks, true);
   this.registerListeners_(this.config_.callbacks, false);
-  var iframeUrl = this.config_.iframeUrl ||
-      window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_URL;
   window.google.identitytoolkit.easyrp.rpc.initClient({
     popupMode: this.config_.popupMode,
     popupWindow: this.config_.popupWindow,
-    iframeUrl: iframeUrl
+    iframeUrl: this.config_.cdsServer.iframe,
+    cdsDomain: this.config_.cdsServer.domain
   });
   return this;
 };
@@ -1582,18 +1627,13 @@ window.google.identitytoolkit.easyrp.CdsClient.prototype.openPopupWindow_ =
   window.google.identitytoolkit.easyrp.rpc.client_.cdsReady = false;
   var popupWindow =
       window.google.identitytoolkit.easyrp.rpc.client_.popupWindow;
-  var popupUrl = this.config_.cdsPopupUrl ||
-      window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_POPUP_URL;
   if (!popupWindow || popupWindow.closed) {
-    var width = this.config_.popupWidth ||
-        window.google.identitytoolkit.easyrp.rpc.DEFAULT_POPUP_WIDTH;
-    var height = this.config_.popupHeight ||
-        window.google.identitytoolkit.easyrp.rpc.DEFAULT_POPUP_HEIGHT;
     popupWindow = window.google.identitytoolkit.easyrp.util.showPopup(
-        width, height, popupUrl);
+        this.config_.popupWidth, this.config_.popupHeight,
+        this.config_.cdsServer.popup);
   } else {
     popupWindow.focus();
-    popupWindow.window.location.href = popupUrl;
+    popupWindow.window.location.href = this.config_.cdsServer.popup;
   }
   window.google.identitytoolkit.easyrp.rpc.client_.popupWindow = popupWindow;
   return popupWindow;
@@ -1611,8 +1651,7 @@ window.google.identitytoolkit.easyrp.CdsClient.prototype.prepareCall_ =
   if (this.config_.popupMode) {
     this.openPopupWindow_();
   } else {
-    var url = this.config_.cdsRedirectUrl ||
-        window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_REDIRECT_URL;
+    var url = this.config_.cdsServer.redirect;
     url += '#' + window.google.identitytoolkit.easyrp.rpc.getCurrentDomain_();
     var goToCds = function() {
       window.location.href = url;
@@ -1708,9 +1747,4 @@ window.google.identitytoolkit.easyrp.CdsClient.prototype.update = function(
   this.prepareCall_(update.getId());
   window.google.identitytoolkit.easyrp.rpc.callCds(update);
 };
-
-/**
- * Namespace alias for CDS.
- */
-window.cds = window.google.identitytoolkit.easyrp
 

@@ -9,15 +9,13 @@
   <title>Central Account Chooser</title>
   <script type=text/javascript src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.2/jquery.min.js"></script>
   <script type=text/javascript src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.2/jquery-ui.min.js"></script>
-  <script type=text/javascript src="https://gitkit-cds.appspot.com/javascript/cds-server.js"></script>
+  <!--script type=text/javascript src="https://gitkit-cds.appspot.com/javascript/cds-server.js"></script-->
+  <!--link type=text/css rel=stylesheet href="https://gitkit-cds.appspot.com/stylesheet/cds.css" /-->
+  <script type="text/javascript" src="https://ajax.googleapis.com/jsapi"></script>
+  <script type="text/javascript">
+    google.load('identitytoolkit', '0.1', {packages: ['cds_server']});
+  </script>
   <script type=text/javascript src="cds-config.js"></script>
-  <link type=text/css rel=stylesheet href="https://gitkit-cds.appspot.com/stylesheet/cds.css" />
-  <style type="text/css">
-    body {
-      margin: 25px;
-      background-color: #eee;
-    }
-  </style>
   <script type=text/javascript>
     jQuery(function(){
       var options = jQuery.extend({}, window.cds.CDS_CONFIG, {
@@ -26,6 +24,12 @@
       jQuery('#cds').cds(options);
     });
   </script>
+  <style type="text/css">
+    body {
+      margin: 25px;
+      background-color: #eee;
+    }
+  </style>
 </head>
 <body>
 <style>plaintext{display:none}</style>

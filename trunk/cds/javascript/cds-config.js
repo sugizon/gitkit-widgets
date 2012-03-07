@@ -14,19 +14,41 @@
  */
 
 window.cds.CDS_CONFIG = {
-  Uiloader: new window.google.identitytoolkit.easyrp.UrlTemplateUiLoader(
-      'https://gitkit-cds.appspot.com/javascript/{baseFilename}__{language}.js',
-      'https://gitkit-cds.appspot.com/javascript/{baseFilename}__en.js'),
-  services: {
-    web: {
-      store: {baseFilename: 'cds-services',
-          name: 'window.google.identitytoolkit.easyrp.StoreService'},
-      select: {baseFilename: 'cds-services',
-          name: 'window.google.identitytoolkit.easyrp.SelectService'},
-      update: {baseFilename: 'cds-services',
-          name: 'window.google.identitytoolkit.easyrp.UpdateService'}
-    }
-  },
+//  Uiloader: new window.google.identitytoolkit.easyrp.UrlTemplateUiLoader(
+//      'https://gitkit-cds.appspot.com/javascript/{baseFilename}__{language}.js'),
+//  services: {
+//    web: {
+//      store: {baseFilename: 'cds-services',
+//          name: 'window.google.identitytoolkit.easyrp.StoreService'},
+//      select: {baseFilename: 'cds-services',
+//          name: 'window.google.identitytoolkit.easyrp.SelectService'},
+//      update: {baseFilename: 'cds-services',
+//          name: 'window.google.identitytoolkit.easyrp.UpdateService'}
+//    }
+//  },
+    Uiloader: new window.google.identitytoolkit.easyrp.AjaxUiLoader(),
+    services: {
+      web: {
+        store: {
+          module: 'identitytoolkit',
+          version: '0.1',
+          packageName: 'cds_services',
+          name: 'window.google.identitytoolkit.easyrp.StoreService'
+        },
+        select: {
+          module: 'identitytoolkit',
+          version: '0.1',
+          packageName: 'cds_services',
+          name: 'window.google.identitytoolkit.easyrp.SelectService'
+        },
+        update: {
+          module: 'identitytoolkit',
+          version: '0.1',
+          packageName: 'cds_services',
+          name: 'window.google.identitytoolkit.easyrp.UpdateService'
+        }
+      }
+    },
   idps: {
     gitkit: {
       iframeUrl: 'https://gitkit-idp.appspot.com/iframe.htm'

@@ -44,6 +44,16 @@ window.google.identitytoolkit.easyrp =
     window.google.identitytoolkit.easyrp || {};
 
 /**
+ * @fileoverview Description of this file.
+ * @author mengcheng@google.com (Mengcheng Duan)
+ */
+
+/**
+ * Namespace alias for CDS.
+ */
+window.cds = window.google.identitytoolkit.easyrp;
+
+/**
  * @fileoverview Stores all the labels and messages of the widget. This file
  *               should be translated to support I18N.
  * @author guibinkong@google.com (Guibin Kong)

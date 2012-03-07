@@ -44,6 +44,16 @@ window.google.identitytoolkit.easyrp =
     window.google.identitytoolkit.easyrp || {};
 
 /**
+ * @fileoverview Description of this file.
+ * @author mengcheng@google.com (Mengcheng Duan)
+ */
+
+/**
+ * Namespace alias for CDS.
+ */
+window.cds = window.google.identitytoolkit.easyrp;
+
+/**
  * @fileoverview Stores all the labels and messages of the widget. This file
  *               should be translated to support I18N.
  * @author guibinkong@google.com (Guibin Kong)
@@ -677,7 +687,7 @@ window.google.identitytoolkit.easyrp.config.usernameRegex = /^\w+(\.\w+)*$/;
  */
 
 /**
- * @namespace Utility functions.
+ * Namespace for utility functions.
  */
 window.google.identitytoolkit.easyrp.util =
     window.google.identitytoolkit.easyrp.util || {};
@@ -774,12 +784,11 @@ window.google.identitytoolkit.easyrp.util.postTo = function(targetUrl,
 
 /**
  * Returns the URL params. e.g. To get the value of the "foo" param in the
- * URL the code can be: var foo = parseUrlParams_()['foo'];
+ * URL the code can be: var foo = parseUrlParams()['foo'];
  * @param {string} url The URL to parse.
  * @return {Object} The URL params array.
- * @private
  */
-window.google.identitytoolkit.easyrp.util.parseUrlParams_ = function(url) {
+window.google.identitytoolkit.easyrp.util.parseUrlParams = function(url) {
   var params = [];
   var segments = url.slice(url.indexOf('?') + 1).split('&');
   for (var i = 0; i < segments.length; i++) {
@@ -803,7 +812,7 @@ window.google.identitytoolkit.easyrp.util.formRedirect = function(targetUrl,
     parent) {
   var url = targetUrl.substring(0, targetUrl.indexOf('?'));
   var params =
-      window.google.identitytoolkit.easyrp.util.parseUrlParams_(targetUrl);
+      window.google.identitytoolkit.easyrp.util.parseUrlParams(targetUrl);
   window.google.identitytoolkit.easyrp.util.postTo(url, params, parent);
 };
 
@@ -2516,6 +2525,8 @@ window.google.identitytoolkit.easyrp.page.ManageAccountPage.prototype.
         window.google.identitytoolkit.easyrp.util.accountstorage.removeAccount(
             account);
         self.showManageAccountPage();
+        self.page_.setError(window.google.identitytoolkit.easyrp.labels.
+            manageAccountPage.deleteReminder);
       }
       var accounts = window.google.identitytoolkit.easyrp.util.accountstorage.
           readAccounts();

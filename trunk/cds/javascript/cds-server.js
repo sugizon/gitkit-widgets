@@ -44,13 +44,23 @@ window.google.identitytoolkit.easyrp =
     window.google.identitytoolkit.easyrp || {};
 
 /**
+ * @fileoverview Description of this file.
+ * @author mengcheng@google.com (Mengcheng Duan)
+ */
+
+/**
+ * Namespace alias for CDS.
+ */
+window.cds = window.google.identitytoolkit.easyrp;
+
+/**
  * @fileoverview Defines some common utility functions.
  * @supported Chrome5+, FireFox3.6+, IE8, IE7, and Safari4.0+.
  * @author guibinkong@google.com (Guibin Kong)
  */
 
 /**
- * @namespace Utility functions.
+ * Namespace for utility functions.
  */
 window.google.identitytoolkit.easyrp.util =
     window.google.identitytoolkit.easyrp.util || {};
@@ -147,12 +157,11 @@ window.google.identitytoolkit.easyrp.util.postTo = function(targetUrl,
 
 /**
  * Returns the URL params. e.g. To get the value of the "foo" param in the
- * URL the code can be: var foo = parseUrlParams_()['foo'];
+ * URL the code can be: var foo = parseUrlParams()['foo'];
  * @param {string} url The URL to parse.
  * @return {Object} The URL params array.
- * @private
  */
-window.google.identitytoolkit.easyrp.util.parseUrlParams_ = function(url) {
+window.google.identitytoolkit.easyrp.util.parseUrlParams = function(url) {
   var params = [];
   var segments = url.slice(url.indexOf('?') + 1).split('&');
   for (var i = 0; i < segments.length; i++) {
@@ -176,7 +185,7 @@ window.google.identitytoolkit.easyrp.util.formRedirect = function(targetUrl,
     parent) {
   var url = targetUrl.substring(0, targetUrl.indexOf('?'));
   var params =
-      window.google.identitytoolkit.easyrp.util.parseUrlParams_(targetUrl);
+      window.google.identitytoolkit.easyrp.util.parseUrlParams(targetUrl);
   window.google.identitytoolkit.easyrp.util.postTo(url, params, parent);
 };
 
@@ -457,6 +466,67 @@ window.google.identitytoolkit.easyrp.util.MOBILE_REGEX_ =
 window.google.identitytoolkit.easyrp.util.isMobileAgent = function(agent) {
   return agent && window.google.identitytoolkit.easyrp.util.MOBILE_REGEX_.test(
       agent.toLowerCase());
+};
+
+/**
+ * @fileoverview Defines some utility functions related to i18n.
+ * @author mengcheng@google.com (Mengcheng Duan)
+ */
+
+/**
+ * List of supported language which is denoted by its normalized code.
+ * @private
+ */
+window.google.identitytoolkit.easyrp.util.SUPPORTED_LANGUAGE_ = [
+    'en', 'en_gb', 'fr', 'it', 'de', 'es', 'zh_cn', 'zh_tw', 'ja', 'ko', 'nl',
+    'pl', 'pt', 'ru', 'th', 'tr', 'bg', 'ca', 'hr', 'cs', 'da', 'fil', 'fi',
+    'el', 'hi', 'hu', 'id', 'lv', 'lt', 'no', 'pt_pt', 'ro', 'sr', 'sk', 'sl',
+    'sv', 'uk', 'vi'];
+/**
+ * Language codes map which maps the alternative code to the normolized code in
+ * the list of supported language.
+ * @private
+ */
+window.google.identitytoolkit.easyrp.util.ALTERNATIVE_CODES_MAP_ = {
+  'en_us': 'en', 'zh': 'zh_cn', 'zh_hans': 'zh_cn', 'zh_hans_cn': 'zh_cn',
+  'zh_hant': 'zh_tw', 'zh_hant_tw': 'zh_tw', 'nl_nl': 'nl', 'fr_fr': 'fr',
+  'de_de': 'de', 'it_it': 'it', 'ja_jp': 'ja', 'ko_kr': 'ko', 'pl_pl': 'pl',
+  'pt_br': 'pt', 'ru_ru': 'ru', 'es_es': 'es', 'th_th': 'th', 'tr_tr': 'tr',
+  'bg_bg': 'bg', 'ca_es': 'ca', 'hr_hr': 'hr', 'cs_cz': 'cs', 'da_dk': 'da',
+  'fil_ph': 'fil', 'tl': 'fil', 'fi_fi': 'fi', 'el_gr': 'el', 'hi_in': 'hi',
+  'hu_hu': 'hu', 'id_id': 'id', 'lv_lv': 'lv', 'lt_lt': 'lt', 'no_no': 'no',
+  'nb': 'no', 'nb_no': 'no', 'ro_ro': 'ro', 'sr_cyrl_rs': 'sr', 'sk_sk': 'sk',
+  'sl_si': 'sl', 'sv_se': 'sv', 'uk_ua': 'uk', 'vi_vn': 'vi'};
+
+/**
+ * Finds the normalized code in the supported language list for a given one. If
+ * there's no exactly matched one, try to match the higer level. i.e., 'zh-HK'
+ * will get 'zh' as result, which is eventually mapped to 'zh_cn'. If no code is
+ * found, {@code undefined} is returned.
+ * @param {string} language The language code.
+ * @return {string|undefined} The normalized language code.
+ */
+window.google.identitytoolkit.easyrp.util.findLanguageCode = function(
+    language) {
+  // Normalize language code
+  var lang = language && language.replace(/-/g, '_').toLowerCase();
+  var code;
+  while (lang) {
+    if (jQuery.inArray(lang,
+        window.google.identitytoolkit.easyrp.util.SUPPORTED_LANGUAGE_) > -1) {
+      code = lang;
+      break;
+    } else if (window.google.identitytoolkit.easyrp.util.
+        ALTERNATIVE_CODES_MAP_[lang]) {
+      code = window.google.identitytoolkit.easyrp.util.
+          ALTERNATIVE_CODES_MAP_[lang];
+      break;
+    }
+    var parts = lang.split('_');
+    parts.pop();
+    lang = parts.join('_');
+  }
+  return code;
 };
 
 /**
@@ -1081,12 +1151,12 @@ window.google.identitytoolkit.easyrp.rpc =
 window.google.identitytoolkit.easyrp.rpc.RpcObject = function() {};
 
 /**
- * Transfers the RPC object to a normal object.
+ * Transfers the RPC object to a normal object and sets the storage timestamp.
  * @return {string} The normal object represents the RPC object.
  */
 window.google.identitytoolkit.easyrp.rpc.RpcObject.prototype.toJSON =
     function() {
-  var json = {jsonrpc: '2.0'};
+  var json = {jsonrpc: '2.0', timestamp: new Date().getTime()};
   return json;
 };
 
@@ -1625,16 +1695,14 @@ window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN =
     'https://www.accountchooser.biz';
 
 /** default CDS iframe URL  */
-window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_URL =
-    window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN + '/iframe.htm';
+window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_IFRAME_PATH =
+    '/iframe.htm';
 
 /** default CDS popup URL  */
-window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_POPUP_URL =
-    window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN + '/popup.htm';
+window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_POPUP_PATH = '/popup.htm';
 
 /** default CDS redirect URL  */
-window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_REDIRECT_URL =
-    window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_DOMAIN +
+window.google.identitytoolkit.easyrp.rpc.DEFAULT_CDS_REDIRECT_PATH =
     '/redirect.htm';
 
 /** default popup width  */
@@ -1648,6 +1716,9 @@ window.google.identitytoolkit.easyrp.rpc.EMPTY_RESPONSE_CALLBACK = 'empty';
 
 /** Timeout for IDP assertion, in milliseconds. Default to 3 seconds  */
 window.google.identitytoolkit.easyrp.rpc.IDP_TIMEOUT = 3000;
+
+/** The life time of an RPC object, in milliseconds. Default to 5 minutes. */
+window.google.identitytoolkit.easyrp.rpc.RPC_TIMEOUT = 5 * 60 * 1000;
 
 
 /**
@@ -1716,13 +1787,6 @@ window.google.identitytoolkit.easyrp.rpc.init_ = function(messageHandler) {
  */
 
 /**
- * The life time of a saved RPC object.
- * TODO(guibinkong): Not used yet.
- * @private
- */
-window.google.identitytoolkit.easyrp.rpc.TIMEOUT_ = 5 * 60 * 1000;
-
-/**
  * The prefix for saved in-bound (from client to CDS) RPC Objects
  * @private
  */
@@ -1750,11 +1814,29 @@ window.google.identitytoolkit.easyrp.rpc.readSavedRpcObjects = function(
     key = window.google.identitytoolkit.easyrp.rpc.SAVED_OUT_RPC_PREFIX_;
   }
   key += clientDomain.replace(/^https?:\/\//, '');
+  var result = [];
   var data = window.localStorage.getItem(key);
   if (data) {
     window.localStorage.removeItem(key);
-    return window.JSON.parse(data) || [];
+    var objects = window.JSON.parse(data) || [];
+    var now = new Date().getTime();
+    for (var i = 0; i < objects.length; ++i) {
+      try {
+        var rpc = JSON.parse(objects[i]);
+        if (rpc.timestamp && now - rpc.timestamp <
+            window.google.identitytoolkit.easyrp.rpc.RPC_TIMEOUT) {
+          result.push(objects[i]);
+        } else {
+          window.google.identitytoolkit.easyrp.util.log(
+              'Ignore expired JSON-RPC object: [' + objects[i] + ']');
+        }
+      } catch (e) {
+        window.google.identitytoolkit.easyrp.util.log(
+            'Ignore invalid JSON-RPC object: [' + objects[i] + ']');
+      }
+    }
   }
+  return result;
 };
 
 /**
@@ -2532,16 +2614,17 @@ window.google.identitytoolkit.easyrp.UrlUiLoader.prototype.setServiceLoaded =
  * Creates a URL-template-based UI loader.
  * @param {string} urlTemplate The URL template. The place holders '{language}'
  *     and '{baseFilename}' will be replaced to create actually URL.
- * @param {string} noLanguageUrlTemplate The URL template used when language
- *     is not specified. The place holders '{baseFilename}' will be replaced
- *     to create actually URL.
+ * @param {string=} opt_defaultLanguage The default language used to fill in the
+ *     URL template if no language is provided. If it's not specified or not
+ *     supproted, the default language is set to 'en'.
  * @constructor
  */
 window.google.identitytoolkit.easyrp.UrlTemplateUiLoader = function(urlTemplate,
-    noLanguageUrlTemplate) {
+    opt_defaultLanguage) {
   this.loadedUrls_ = [];
   this.urlTemplate_ = urlTemplate;
-  this.noLanguageUrlTemplate_ = noLanguageUrlTemplate;
+  this.defaultLanguage_ = window.google.identitytoolkit.easyrp.util.
+      findLanguageCode(opt_defaultLanguage) || 'en';
 };
 window.google.identitytoolkit.easyrp.UrlTemplateUiLoader.inheritsFrom(
     window.google.identitytoolkit.easyrp.UrlUiLoader);
@@ -2554,15 +2637,83 @@ window.google.identitytoolkit.easyrp.UrlTemplateUiLoader.inheritsFrom(
 window.google.identitytoolkit.easyrp.UrlTemplateUiLoader.prototype.getFileUrl =
     function(serviceMeta) {
   var fileUrl;
-  if (serviceMeta.language) {
-    fileUrl =
-        this.urlTemplate_.replace(/\{baseFilename\}/, serviceMeta.baseFilename).
-        replace(/\{language\}/, serviceMeta.language.toLowerCase());
-  } else {
-    fileUrl = this.noLanguageUrlTemplate_.
-        replace(/\{baseFilename\}/, serviceMeta.baseFilename);
-  }
+  // If the calling site doesn't specify the language, use the user's browser
+  // language instead. NOTE: It is the browser language that is taken into
+  // account other than the user's language preference set in the browser.
+  // There's no easy way to get it.
+  var language = serviceMeta.language || window.navigator.language;
+  language =
+      window.google.identitytoolkit.easyrp.util.findLanguageCode(language) ||
+      this.defaultLanguage_;
+  fileUrl =
+      this.urlTemplate_.replace(/\{baseFilename\}/, serviceMeta.baseFilename).
+      replace(/\{language\}/, language);
   return fileUrl;
+};
+
+/**
+ * @fileoverview Class to load services UI based on Google AJAX Loader.
+ * @supported Chrome5+, FireFox3.6+, IE8, IE7, and Safari4.0+.
+ * @author guibinkong@google.com (Guibin Kong)
+ */
+
+/**
+ * Creates a UI loader based on Google AJAX Loader.
+ * @constructor
+ */
+window.google.identitytoolkit.easyrp.AjaxUiLoader = function() {
+  this.loadedPackages_ = [];
+};
+window.google.identitytoolkit.easyrp.AjaxUiLoader.inheritsFrom(
+    window.google.identitytoolkit.easyrp.UiLoader);
+
+/**
+ * Computes a unique String according to the configuration.
+ * @param {object} serviceMeta The configuration object for the service.
+ * @return {string} A unique String for the configuration.
+ */
+window.google.identitytoolkit.easyrp.AjaxUiLoader.prototype.stringify =
+    function(serviceMeta) {
+  return serviceMeta.module + ':' + serviceMeta.version + ':' +
+      serviceMeta.packageName + ':' + serviceMeta.language;
+};
+
+/**
+ * Really loads a service UI resource from Ajax Loader. Only called when target
+ * resource is not loaded before.
+ * @param {object} serviceMeta The configuration object for the service.
+ * @param {function} done The callback function after loaded the resource.
+ */
+window.google.identitytoolkit.easyrp.AjaxUiLoader.prototype.loadServiceFromWeb =
+    function(serviceMeta, done) {
+  google.load(serviceMeta.module, serviceMeta.version, {
+    packages: [serviceMeta.packageName],
+    language: serviceMeta.language || window.navigator.language,
+    callback: done
+  });
+};
+
+/**
+ * Whether the resource has been loaded before.
+ * @param {object} serviceMeta The configuration object for the service.
+ * @return {boolean} Whether the resource has been loaded before.
+ */
+window.google.identitytoolkit.easyrp.AjaxUiLoader.prototype.isServiceLoaded =
+    function(serviceMeta) {
+  var packageString = this.stringify(serviceMeta);
+  return jQuery.inArray(packageString, this.loadedPackages_) > -1;
+};
+
+/**
+ * Marks the target resource as loaded.
+ * @param {object} serviceMeta The configuration object for the service.
+ */
+window.google.identitytoolkit.easyrp.AjaxUiLoader.prototype.setServiceLoaded =
+    function(serviceMeta) {
+  var packageString = this.stringify(serviceMeta);
+  if (jQuery.inArray(packageString, this.loadedPackages_) < 0) {
+    this.loadedPackages_.push(packageString);
+  }
 };
 
 /**
@@ -2636,9 +2787,4 @@ window.google.identitytoolkit.easyrp.UrlTemplateUiLoader.prototype.getFileUrl =
 
   jQuery.widget('ui.cds', widget);
 })(jQuery);
-
-/**
- * Namespace alias for CDS.
- */
-window.cds = window.google.identitytoolkit.easyrp;
 

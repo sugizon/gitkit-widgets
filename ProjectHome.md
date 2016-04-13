@@ -1,0 +1,1 @@
+The UI widgets of Google Identity Toolkit (GITKit).
